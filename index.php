@@ -18,27 +18,27 @@ foreach ($tables as $table) {
     generateClassesForTable($database, $table);
 }
 
-
-
-function generateClassesForTable($database, $table){
+function generateClassesForTable($database, $table) {
     echo "Generating classes for $table... ";
 
     // get it's columns
     $records = $database->getRecords("SHOW COLUMNS FROM $table");
-
+    
     // prepare vars
     $columns = array();
     foreach ($records as $record) {
 	$column = array();
 	// make fieldname camel cased
 	$column['fieldName'] = toCamelCase($record['Field']);
-	$column['type'] = $record['Type'];
+	$column['originalFieldName'] = $record['Field'];
+	$column['type'] = getTypePerLanguage($record['Type']);
 	$column['isNull'] = $record['Null'] === 'YES' ? true : false;
 	$column['isPrimaryKey'] = $record['Key'] === "PRI" ? true : false;
 	$column['isDefaultValue'] = $record['Default'];
 	$column['extra'] = $record['Extra'];
 
-	$columns[] = $column;
+	if($column['isPrimaryKey']) $columns['primaryKey'] = $column;
+	else $columns[] = $column;
     }
 
     // generate the classes for every item in the directory
@@ -53,23 +53,25 @@ function generateEveryFileInDir($directory, $table, $columns) {
 	// get the directory content
 	$directoryContent = scandir(TEMPLATE_DIRECTORY . '/' . $directory);
 
+	$directory = (empty($directory) ? '' : $directory . '/');
 	// for ever item in the directory...
 	foreach ($directoryContent as $item) {
 	    // ignore the . and .. references 
 	    if ($item === '.' || $item === '..') {
 		// do nothing
 	    } else {
-		$directory = (empty($directory) ? '' : $directory . '/') ;
-		
 		// test if it's a directory on it's own
 		if (is_dir(TEMPLATE_DIRECTORY . '/' . $directory . $item)) {
+		    // generate directory if not exists
+		    if (!file_exists('generated_classes/' . $directory)) mkdir('generated_classes/' . $directory);
+		    
 		    // generate the files in that directory
 		    generateEveryFileInDir($directory . $item, $table, $columns);
 		} else {
 		    // create output directory if not exists
-		    if(!file_exists('generated_classes/' . $directory)) mkdir('generated_classes/' . $directory);
+		    if (!file_exists('generated_classes/' . $directory)) mkdir('generated_classes/' . $directory);
 		    // generate the files in this directory
-		    generateFile(TEMPLATE_DIRECTORY . '/' . $directory, $item, 'generated_classes/' . $directory . toCamelCase($table, true) . '.php', $table, $columns);
+		    generateFile(TEMPLATE_DIRECTORY . '/' . $directory, $item, 'generated_classes/' . $directory . str_replace('%Classname%',  toCamelCase($table, true), $item), $table, $columns);
 		}
 	    }
 	}
@@ -86,6 +88,7 @@ function generateFile($templateDir, $templateFileName, $generatedFile, $table, $
 
     // assign vars
     $templateCompiler->assign('className', toCamelCase($table, true));
+    $templateCompiler->assign('tableName', $table);
     $templateCompiler->assign('fields', $columns);
     $templateCompiler->assign('authorName', AUTHOR_NAME);
     $templateCompiler->assign('authorEmail', AUTHOR_EMAIL);
@@ -100,7 +103,64 @@ function generateFile($templateDir, $templateFileName, $generatedFile, $table, $
 }
 
 /**
- * Convert a string to camelcasing.
+ * returns the extension for a filename.
+ *
+ * @return	string		    The extension.
+ * @param	string $filename    The full path of the file.
+ */
+function getExtension($filename) {
+    // init var
+    $filename = (string) $filename;
+
+    // get extension
+    $parts = (array) explode('.', $filename);
+
+    // count the parts
+    $count = count($parts);
+
+    // return the last part
+    if ($count != 0)
+	return $parts[$count - 1];
+
+    // no extension
+    return '';
+}
+
+function getTypePerLanguage ($SQLtype) {
+    // init vars
+    $types = array();
+    
+    // Boolean
+    if(preg_match('/bool/i', $SQLtype) || preg_match('/boolean/i', $SQLtype)) {
+	$types = array('php' => 'boolean', 'as' => 'Boolean');
+    }
+    
+    // Date
+    if(preg_match('/date/i', $SQLtype)) {
+	$types = array('php' => 'date', 'as' => 'Date');
+    }
+    
+    // float
+    if(preg_match('/float/i', $SQLtype)) {
+	$types = array('php' => 'float', 'as' => 'Number');
+    }
+    
+    // Integer
+    if(preg_match('/int\(\d+\)/i', $SQLtype)) {
+	$types = array('php' => 'int', 'as' => 'Number');
+    }
+    
+    // String
+    if(preg_match('/varchar\(\d+\)/i', $SQLtype)) {
+	$types = array('php' => 'string', 'as' => 'String');
+    }
+    
+    // return types
+    return $types;
+}
+
+/**
+ * Converts a string to camelcasing.
  *
  * @return	string					The resulted string
  * @param	string $inputValue			The string that should be camelcased
