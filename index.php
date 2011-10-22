@@ -15,39 +15,88 @@ echo "DONE \n";
 
 // for every table...
 foreach ($tables as $table) {
+    generateClassesForTable($database, $table);
+}
+
+
+
+function generateClassesForTable($database, $table){
     echo "Generating classes for $table... ";
-    
+
     // get it's columns
-    $columns = $database->getRecords('SHOW COLUMNS FROM ' . $table);
+    $records = $database->getRecords("SHOW COLUMNS FROM $table");
 
     // prepare vars
-    foreach ($columns as &$column) {
+    $columns = array();
+    foreach ($records as $record) {
+	$column = array();
 	// make fieldname camel cased
-	$column['FieldName'] = toCamelCase($column['Field']);
+	$column['fieldName'] = toCamelCase($record['Field']);
+	$column['type'] = $record['Type'];
+	$column['isNull'] = $record['Null'] === 'YES' ? true : false;
+	$column['isPrimaryKey'] = $record['Key'] === "PRI" ? true : false;
+	$column['isDefaultValue'] = $record['Default'];
+	$column['extra'] = $record['Extra'];
+
+	$columns[] = $column;
     }
 
+    // generate the classes for every item in the directory
+    generateEveryFileInDir('', $table, $columns);
+
+    echo "DONE \n";
+}
+
+function generateEveryFileInDir($directory, $table, $columns) {
+    // only run this function if the given directory is in fact a directory
+    if (is_dir(TEMPLATE_DIRECTORY . '/' . $directory)) {
+	// get the directory content
+	$directoryContent = scandir(TEMPLATE_DIRECTORY . '/' . $directory);
+
+	// for ever item in the directory...
+	foreach ($directoryContent as $item) {
+	    // ignore the . and .. references 
+	    if ($item === '.' || $item === '..') {
+		// do nothing
+	    } else {
+		$directory = (empty($directory) ? '' : $directory . '/') ;
+		
+		// test if it's a directory on it's own
+		if (is_dir(TEMPLATE_DIRECTORY . '/' . $directory . $item)) {
+		    // generate the files in that directory
+		    generateEveryFileInDir($directory . $item, $table, $columns);
+		} else {
+		    // create output directory if not exists
+		    if(!file_exists('generated_classes/' . $directory)) mkdir('generated_classes/' . $directory);
+		    // generate the files in this directory
+		    generateFile(TEMPLATE_DIRECTORY . '/' . $directory, $item, 'generated_classes/' . $directory . toCamelCase($table, true) . '.php', $table, $columns);
+		}
+	    }
+	}
+    }
+}
+
+function generateFile($templateDir, $templateFileName, $generatedFile, $table, $columns) {
     // prepare template compiler
     $templateCompiler = new Smarty();
-    $templateCompiler->setTemplateDir('templates/');
+    $templateCompiler->setTemplateDir($templateDir);
     $templateCompiler->setCompileDir('compiled_templates/');
     $templateCompiler->setConfigDir('configs/');
     $templateCompiler->setCacheDir('cache/');
-    
+
     // assign vars
     $templateCompiler->assign('className', toCamelCase($table, true));
     $templateCompiler->assign('fields', $columns);
     $templateCompiler->assign('authorName', AUTHOR_NAME);
     $templateCompiler->assign('authorEmail', AUTHOR_EMAIL);
-    
-    // fetch file content
-    $fileContent = $templateCompiler->fetch('Class.php');
-    
+
+    // fetch file content' 
+    $fileContent = $templateCompiler->fetch($templateFileName);
+
     // save to new file
-    $file = fopen('generated_classes/' . toCamelCase($table, true) . '.php', 'w') or die("Couldn't create file: " . toCamelCase($table));
+    $file = fopen($generatedFile, 'w') or die("Couldn't create file: " . toCamelCase($table));
     fwrite($file, $fileContent);
     fclose($file);
-    
-    echo "DONE \n";
 }
 
 /**
@@ -67,14 +116,15 @@ function toCamelCase($inputValue, $firstCharUpperCase = false, $separator = '_')
 
     foreach ($words as $i => $word) {
 	// skip empty words
-	if ($word != '') 
-	{
+	if ($word != '') {
 	    // make word lowercase
 	    $word = strtolower($word);
 
 	    // When it's not the first word and we shouldn't use lowercase for the first word convert first letter to uppercase
-	    if ($i != 0) $word = ucfirst($word);
-	    else if ($firstCharUpperCase) $word = ucfirst($word);
+	    if ($i != 0)
+		$word = ucfirst($word);
+	    else if ($firstCharUpperCase)
+		$word = ucfirst($word);
 
 	    // append the word to the return value
 	    $returnValue .= $word;
