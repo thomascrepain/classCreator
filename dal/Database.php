@@ -125,14 +125,6 @@ interface Database {
     public function getTables();
 
     /**
-     * Retrieve the type for this value
-     *
-     * @return	int
-     * @param	mixed $value		The value to retrieve the type for.
-     */
-    private function getType($value);
-
-    /**
      * Fetch a single var
      *
      * @return	string							The value as a string
@@ -158,15 +150,6 @@ interface Database {
     public function optimize($tables);
 
     /**
-     * Quote the name of a table or column.
-     * Note: for now this will only put backticks around the name (mysql).
-     *
-     * @return	string			The quoted name.
-     * @param	string $name	The name of a column or table to quote.
-     */
-    protected function quoteName($name);
-
-    /**
      * Retrieves an associative array or returns null if there were no results
      * This is an alias for getRecords
      *
@@ -178,53 +161,11 @@ interface Database {
     public function retrieve($query, $parameters = array(), $key = null);
 
     /**
-     * Set database name
-     *
-     * @param	string $database	The name of the database.
-     */
-    private function setDatabase($database);
-
-    /**
      * Set the debug status
      *
      * @param	bool[optional] $on	Should debug-mode be activated. Be carefull, this will use a lot of resources (Memory and CPU).
      */
     public function setDebug($on = true);
-
-    /**
-     * Set driver type
-     *
-     * @param	string $driver	The driver to use. Available drivers depend on your server configuration.
-     */
-    private function setDriver($driver);
-
-    /**
-     * Set hostname
-     *
-     * @param	string $hostname	The host or IP of your database-server.
-     */
-    private function setHostname($hostname);
-
-    /**
-     * Set password
-     *
-     * @param	string $password	The password to authenticate on your database-server.
-     */
-    private function setPassword($password);
-
-    /**
-     * Set port
-     *
-     * @param	int $port	The port to connect on.
-     */
-    private function setPort($port);
-
-    /**
-     * Set username
-     *
-     * @param	string $username	The username to authenticate on your database-server.
-     */
-    private function setUsername($username);
 
     /**
      * Truncate on or more tables
