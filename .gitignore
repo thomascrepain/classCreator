@@ -1,10 +1,18 @@
+# Cache 
+cache/
+compiled_templates/
+generated_classes/
+
 # Mac files
 .DS_Store
 
-# Swf files
-*.swf
-
 # Project property files
+
+
+#IDE files
+nbproject/
+
+
 
 # Build and Release Folders
 bin-debug/
