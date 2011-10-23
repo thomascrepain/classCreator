@@ -1,0 +1,11 @@
+# Mac files
+.DS_Store
+
+# Swf files
+*.swf
+
+# Project property files
+
+# Build and Release Folders
+bin-debug/
+bin-release/
