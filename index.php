@@ -56,8 +56,8 @@ function generateEveryFileInDir($directory, $table, $columns) {
 	$directory = (empty($directory) ? '' : $directory . '/');
 	// for ever item in the directory...
 	foreach ($directoryContent as $item) {
-	    // ignore the . and .. references 
-	    if ($item === '.' || $item === '..') {
+	    // ignore hidden template files (e.g. . and ..)
+	    if (in_array($item, explode("|", TEMPLATE_HIDDEN))) {
 		// do nothing
 	    } else {
 		// test if it's a directory on it's own
