@@ -6,13 +6,14 @@ generated_classes/
 # Mac files
 .DS_Store
 
-# Project property files
+# Settings file (we use the .inc extension to show original files)
+settings.php
 
+# Default templates folder (we don't want people to commit their templates)
+templates/
 
 #IDE files
 nbproject/
-
-
 
 # Build and Release Folders
 bin-debug/
