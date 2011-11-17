@@ -6,7 +6,7 @@ generated_classes/
 # Mac files
 .DS_Store
 
-# Settings file (we use the .inc extension to show original files)
+# Settings file (we use settings.default.php to show original settingsfile)
 settings.php
 
 # Default templates folder (we don't want people to commit their templates)
