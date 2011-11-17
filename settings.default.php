@@ -21,6 +21,8 @@ define('DATABASE_PASSWORD', '<password>');
  */
 // Template directory
 define('TEMPLATE_DIRECTORY', 'templates');
+// Hidden template files
+define('TEMPLATE_HIDDEN', '.|..|.DS_Store');
 
 /**
  * Author configuration

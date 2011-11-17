@@ -38,16 +38,18 @@ function generateClassesForTable($database, $table) {
 	$column['isDefaultValue'] = $record['Default'];
 	$column['extra'] = $record['Extra'];
 
-	if($column['isPrimaryKey']) {
+	if ($column['isPrimaryKey']) {
 	    $columns['primaryKey'] = $column;
 	    $numberOfPrimaryKeys++;
 	}
-	else $columns[] = $column;
+	else
+	    $columns[] = $column;
     }
 
     // generate the classes for every item in the directory
     // but only if the table has 1 primary key (we want to exclude junction tables)
-    if($numberOfPrimaryKeys == 1) generateEveryFileInDir('', $table, $columns);
+    if ($numberOfPrimaryKeys == 1)
+	generateEveryFileInDir('', $table, $columns);
 
     echo "DONE \n";
 }
@@ -61,22 +63,24 @@ function generateEveryFileInDir($directory, $table, $columns) {
 	$directory = (empty($directory) ? '' : $directory . '/');
 	// for ever item in the directory...
 	foreach ($directoryContent as $item) {
-	    // ignore the . and .. references
-	    if ($item === '.' || $item === '..') {
+	    // ignore hidden template files (e.g. . and ..)
+	    if (in_array($item, explode("|", TEMPLATE_HIDDEN))) {
 		// do nothing
 	    } else {
 		// test if it's a directory on it's own
 		if (is_dir(TEMPLATE_DIRECTORY . '/' . $directory . $item)) {
 		    // generate directory if not exists
-		    if (!file_exists('generated_classes/' . $directory)) mkdir('generated_classes/' . $directory);
+		    if (!file_exists('generated_classes/' . $directory))
+			mkdir('generated_classes/' . $directory);
 
 		    // generate the files in that directory
 		    generateEveryFileInDir($directory . $item, $table, $columns);
 		} else {
 		    // create output directory if not exists
-		    if (!file_exists('generated_classes/' . $directory)) mkdir('generated_classes/' . $directory);
+		    if (!file_exists('generated_classes/' . $directory))
+			mkdir('generated_classes/' . $directory);
 		    // generate the files in this directory
-		    generateFile(TEMPLATE_DIRECTORY . '/' . $directory, $item, 'generated_classes/' . $directory . str_replace('%Classname%',  toCamelCase($table, true), $item), $table, $columns);
+		    generateFile(TEMPLATE_DIRECTORY . '/' . $directory, $item, 'generated_classes/' . $directory . str_replace('%Classname%', toCamelCase($table, true), $item), $table, $columns);
 		}
 	    }
 	}
@@ -131,42 +135,42 @@ function getExtension($filename) {
     return '';
 }
 
-function getTypePerLanguage ($SQLtype) {
+function getTypePerLanguage($SQLtype) {
     // init vars
     $types = array();
 
     // Boolean
-    if(preg_match('/bool/i', $SQLtype) || preg_match('/boolean/i', $SQLtype)) {
+    if (preg_match('/bool/i', $SQLtype) || preg_match('/boolean/i', $SQLtype)) {
 	$types = array('php' => 'boolean', 'as' => 'Boolean');
     }
 
     // Date
-    if(preg_match('/date/i', $SQLtype)) {
+    if (preg_match('/date/i', $SQLtype)) {
 	$types = array('php' => 'date', 'as' => 'Date');
     }
 
     // timestamp
-    if(preg_match('/timestamp/i', $SQLtype)) {
+    if (preg_match('/timestamp/i', $SQLtype)) {
 	$types = array('php' => 'int', 'as' => 'Number');
     }
 
     // float
-    if(preg_match('/float/i', $SQLtype)) {
+    if (preg_match('/float/i', $SQLtype)) {
 	$types = array('php' => 'float', 'as' => 'Number');
     }
 
     // decimal
-    if(preg_match('/decimal/i', $SQLtype)) {
+    if (preg_match('/decimal/i', $SQLtype)) {
 	$types = array('php' => 'float', 'as' => 'Number');
     }
 
     // Integer
-    if(preg_match('/int\(\d+\)/i', $SQLtype)) {
+    if (preg_match('/int\(\d+\)/i', $SQLtype)) {
 	$types = array('php' => 'int', 'as' => 'Number');
     }
 
     // String
-    if(preg_match('/varchar\(\d+\)/i', $SQLtype)) {
+    if (preg_match('/varchar\(\d+\)/i', $SQLtype)) {
 	$types = array('php' => 'string', 'as' => 'String');
     }
 
