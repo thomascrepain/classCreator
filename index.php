@@ -23,9 +23,10 @@ function generateClassesForTable($database, $table) {
 
     // get it's columns
     $records = $database->getRecords("SHOW COLUMNS FROM $table");
-    
+
     // prepare vars
     $columns = array();
+    $numberOfPrimaryKeys = 0;
     foreach ($records as $record) {
 	$column = array();
 	// make fieldname camel cased
@@ -37,12 +38,16 @@ function generateClassesForTable($database, $table) {
 	$column['isDefaultValue'] = $record['Default'];
 	$column['extra'] = $record['Extra'];
 
-	if($column['isPrimaryKey']) $columns['primaryKey'] = $column;
+	if($column['isPrimaryKey']) {
+	    $columns['primaryKey'] = $column;
+	    $numberOfPrimaryKeys++;
+	}
 	else $columns[] = $column;
     }
 
     // generate the classes for every item in the directory
-    generateEveryFileInDir('', $table, $columns);
+    // but only if the table has 1 primary key (we want to exclude junction tables)
+    if($numberOfPrimaryKeys == 1) generateEveryFileInDir('', $table, $columns);
 
     echo "DONE \n";
 }
@@ -56,7 +61,7 @@ function generateEveryFileInDir($directory, $table, $columns) {
 	$directory = (empty($directory) ? '' : $directory . '/');
 	// for ever item in the directory...
 	foreach ($directoryContent as $item) {
-	    // ignore the . and .. references 
+	    // ignore the . and .. references
 	    if ($item === '.' || $item === '..') {
 		// do nothing
 	    } else {
@@ -64,7 +69,7 @@ function generateEveryFileInDir($directory, $table, $columns) {
 		if (is_dir(TEMPLATE_DIRECTORY . '/' . $directory . $item)) {
 		    // generate directory if not exists
 		    if (!file_exists('generated_classes/' . $directory)) mkdir('generated_classes/' . $directory);
-		    
+
 		    // generate the files in that directory
 		    generateEveryFileInDir($directory . $item, $table, $columns);
 		} else {
@@ -93,7 +98,7 @@ function generateFile($templateDir, $templateFileName, $generatedFile, $table, $
     $templateCompiler->assign('authorName', AUTHOR_NAME);
     $templateCompiler->assign('authorEmail', AUTHOR_EMAIL);
 
-    // fetch file content' 
+    // fetch file content'
     $fileContent = $templateCompiler->fetch($templateFileName);
 
     // save to new file
@@ -129,32 +134,42 @@ function getExtension($filename) {
 function getTypePerLanguage ($SQLtype) {
     // init vars
     $types = array();
-    
+
     // Boolean
     if(preg_match('/bool/i', $SQLtype) || preg_match('/boolean/i', $SQLtype)) {
 	$types = array('php' => 'boolean', 'as' => 'Boolean');
     }
-    
+
     // Date
     if(preg_match('/date/i', $SQLtype)) {
 	$types = array('php' => 'date', 'as' => 'Date');
     }
-    
+
+    // timestamp
+    if(preg_match('/timestamp/i', $SQLtype)) {
+	$types = array('php' => 'int', 'as' => 'Number');
+    }
+
     // float
     if(preg_match('/float/i', $SQLtype)) {
 	$types = array('php' => 'float', 'as' => 'Number');
     }
-    
+
+    // decimal
+    if(preg_match('/decimal/i', $SQLtype)) {
+	$types = array('php' => 'float', 'as' => 'Number');
+    }
+
     // Integer
     if(preg_match('/int\(\d+\)/i', $SQLtype)) {
 	$types = array('php' => 'int', 'as' => 'Number');
     }
-    
+
     // String
     if(preg_match('/varchar\(\d+\)/i', $SQLtype)) {
 	$types = array('php' => 'string', 'as' => 'String');
     }
-    
+
     // return types
     return $types;
 }
